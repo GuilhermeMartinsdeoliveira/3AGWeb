@@ -1,160 +1,98 @@
 document.addEventListener("DOMContentLoaded", function () {
 
+    // 1. Inicialização do Carrossel do Bootstrap
     const carouselElement = document.querySelector("#carrosselServicos");
+    if (carouselElement && typeof bootstrap !== "undefined") {
+        new bootstrap.Carousel(carouselElement, {
+            interval: 5000,
+            ride: "carousel",
+            pause: false,
+            wrap: true,
+            touch: true
+        });
+    }
 
-    const carousel = new bootstrap.Carousel(carouselElement, {
-        interval: 5000,
-        ride: "carousel",
-        pause: false,
-        wrap: true,
-        touch: true
-    });
+    // 2. Animação de Scroll (IntersectionObserver)
+    const reveals = document.querySelectorAll('.revelar');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add('visivel');
+            }
+        });
+    }, { threshold: 0.12 });
 
-    const indicators = document.querySelectorAll(".carousel-indicators button");
+    reveals.forEach(el => observer.observe(el));
 
-    carouselElement.addEventListener("slide.bs.carousel", function (event) {
-        indicators.forEach((btn) => {
-            btn.classList.remove("active");
-            btn.removeAttribute("aria-current");
+    // 3. Menu Hambúrguer (Mobile)
+    const hamburger = document.getElementById('menu-hamburguer');
+    const navLinksWrap = document.querySelector('.links-navegacao');
+
+    if (hamburger && navLinksWrap) {
+        const navItems = navLinksWrap.querySelectorAll('a');
+
+        const closeMenu = () => {
+            navLinksWrap.classList.remove('ativo');
+            hamburger.classList.remove('ativo');
+            hamburger.setAttribute('aria-expanded', 'false');
+            hamburger.setAttribute('aria-label', 'Abrir menu');
+        };
+
+        const openMenu = () => {
+            navLinksWrap.classList.add('ativo');
+            hamburger.classList.add('ativo');
+            hamburger.setAttribute('aria-expanded', 'true');
+            hamburger.setAttribute('aria-label', 'Fechar menu');
+        };
+
+        hamburger.addEventListener('click', () => {
+            const isOpen = navLinksWrap.classList.contains('ativo');
+            isOpen ? closeMenu() : openMenu();
         });
 
-        indicators[event.to].classList.add("active");
-        indicators[event.to].setAttribute("aria-current", "true");
-    });
+        navItems.forEach((item) => item.addEventListener('click', closeMenu));
 
-});
-
-
-const reveals = document.querySelectorAll('.revelar');
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-        if (e.isIntersecting) {
-            e.target.classList.add('visivel');
-        }
-    });
-}, { threshold: 0.12 });
-
-reveals.forEach(el => observer.observe(el));
-
-
-const hamburger = document.getElementById('menu-hamburguer');
-const navLinksWrap = document.querySelector('.links-navegacao');
-
-if (hamburger && navLinksWrap) {
-    const navItems = navLinksWrap.querySelectorAll('a');
-
-    hamburger.setAttribute('aria-expanded', 'false');
-    hamburger.setAttribute('aria-label', 'Abrir menu');
-
-    const closeMenu = () => {
-        navLinksWrap.classList.remove('ativo');
-        hamburger.classList.remove('ativo');
-        hamburger.setAttribute('aria-expanded', 'false');
-        hamburger.setAttribute('aria-label', 'Abrir menu');
-    };
-
-    const openMenu = () => {
-        navLinksWrap.classList.add('ativo');
-        hamburger.classList.add('ativo');
-        hamburger.setAttribute('aria-expanded', 'true');
-        hamburger.setAttribute('aria-label', 'Fechar menu');
-    };
-
-    hamburger.addEventListener('click', () => {
-        const isOpen = navLinksWrap.classList.contains('ativo');
-        if (isOpen) {
-            closeMenu();
-            return;
-        }
-        openMenu();
-    });
-
-    navItems.forEach((item) => {
-        item.addEventListener('click', closeMenu);
-    });
-
-    document.addEventListener('click', (event) => {
-        if (!navLinksWrap.classList.contains('ativo')) {
-            return;
-        }
-
-        const clickedInsideMenu = navLinksWrap.contains(event.target);
-        const clickedHamburger = hamburger.contains(event.target);
-
-        if (!clickedInsideMenu && !clickedHamburger) {
-            closeMenu();
-        }
-    });
-}
-
-
-const servicesTrack = document.getElementById('trilhaServicos');
-const servicesDotsWrap = document.querySelector('.carousel-indicators');
-const servicePrev = document.querySelector('[data-bs-slide="prev"]');
-const serviceNext = document.querySelector('[data-bs-slide="next"]');
-
-if (servicesTrack && servicesDotsWrap && servicePrev && serviceNext) {
-    const slides = Array.from(servicesTrack.querySelectorAll('.cartao-servico'));
-    const dots = Array.from(servicesDotsWrap.querySelectorAll('.ponto-carrossel'));
-    let serviceIndex = 0;
-
-    const updateServicesCarousel = () => {
-        servicesTrack.style.transform = `translateX(-${serviceIndex * 100}%)`;
-
-        dots.forEach((dot, index) => {
-            dot.classList.toggle('ativo', index === serviceIndex);
+        document.addEventListener('click', (event) => {
+            if (!navLinksWrap.classList.contains('ativo')) return;
+            if (!navLinksWrap.contains(event.target) && !hamburger.contains(event.target)) {
+                closeMenu();
+            }
         });
+    }
 
-        servicePrev.disabled = serviceIndex === 0;
-        serviceNext.disabled = serviceIndex === slides.length - 1;
-    };
+    // 4. Highlight do Menu por Seção no Scroll
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.links-navegacao a');
 
-    servicePrev.addEventListener('click', () => {
-        serviceIndex = Math.max(0, serviceIndex - 1);
-        updateServicesCarousel();
-    });
-
-    serviceNext.addEventListener('click', () => {
-        serviceIndex = Math.min(slides.length - 1, serviceIndex + 1);
-        updateServicesCarousel();
-    });
-
-    dots.forEach((dot, index) => {
-        dot.addEventListener('click', () => {
-            serviceIndex = index;
-            updateServicesCarousel();
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(s => {
+            if (window.scrollY >= s.offsetTop - 120) {
+                current = s.id;
+            }
         });
-    });
-
-    updateServicesCarousel();
-} else {
-    
-    const dots = Array.from(document.querySelectorAll('.ponto-carrossel'));
-    dots.forEach((dot, index) => {
-        dot.addEventListener('click', () => {
-            dots.forEach(d => d.classList.remove('ativo'));
-            dot.classList.add('ativo');
+        navLinks.forEach(a => {
+            a.style.color = a.getAttribute('href') === `#${current}` ? 'var(--dourado-claro)' : '';
         });
-    });
-}
-
-
-const sections = document.querySelectorAll('section[id]');
-const navLinks = document.querySelectorAll('.links-navegacao a');
-
-window.addEventListener('scroll', () => {
-    let current = '';
-    sections.forEach(s => {
-        if (window.scrollY >= s.offsetTop - 120) current = s.id;
-    });
-    navLinks.forEach(a => {
-        a.style.color = a.getAttribute('href') === `#${current}` ? 'var(--dourado-claro)' : '';
     });
 });
 
-function janela(){
-    alert("Suas informações foram resgistradas, entraremos em contato o mais breve possível!");
+// Enviar mensagem formatada diretamente para o WhatsApp
+function enviarWhatsApp(event) {
+    event.preventDefault();
+
+    const nome = document.getElementById('nomeContato').value;
+    const email = document.getElementById('emailContato').value;
+    const mensagem = document.getElementById('mensagemContato').value;
+
+    // Coloque aqui o número do WhatsApp da empresa com DDD (ex: 5511999999999)
+    const numeroWhatsApp = "5511999999999"; 
+
+    const texto = `Olá! Meu nome é *${nome}*.
+E-mail: ${email}
+
+*Mensagem:* ${mensagem}`;
+    const url = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(texto)}`;
+
+    window.open(url, '_blank');
 }
-
-
-
